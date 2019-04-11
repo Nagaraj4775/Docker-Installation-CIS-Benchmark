@@ -1,0 +1,47 @@
+version: '3.3'
+services:
+  web:
+    image: python-app:latest
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 50M
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "5000:80"
+        # links:
+        # - redis
+    depends_on:
+      - redis
+    networks:
+      - web-net
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - web-net
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - "redis-data:/data"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    command: redis-server --appendonly yes
+    networks:
+      - web-net
+networks:
+  web-net:
+volumes:
+  redis-data:
